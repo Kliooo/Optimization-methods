@@ -15,7 +15,7 @@ def f2(x):
     return (x1**2 + x2 - 11)**2 + (x1 + x2**2 - 7)**2
 
 
-def nelder_method(func, start_point, alpha=1, beta=0.5, gamma=2, epsilon=1e-8, max_iter=1000):
+def nelder_method(func, start_point, alpha=1, beta=0.5, gamma=2, epsilon=1e-3, max_iter=1000):
     n = len(start_point)
 
     # Формируем начальный симплекс
@@ -82,7 +82,7 @@ def gradient(func, x, epsilon=1e-8):
     
     return grad
 
-def gradient_method(func, start_point, epsilon=1e-8, max_iter=10000):
+def gradient_method(func, start_point, epsilon=1e-3, max_iter=10000):
     x_k = np.array(start_point)
     iter_count = 0
 
@@ -102,7 +102,7 @@ def gradient_method(func, start_point, epsilon=1e-8, max_iter=10000):
 
     return x_k, func(x_k), iter_count
 
-def conjugate_gradient_method(func, start_point, epsilon=1e-8, max_iter=10000):
+def conjugate_gradient_method(func, start_point, epsilon=1e-3, max_iter=10000):
     x_k = np.array(start_point)
     grad_k = gradient(func, x_k, epsilon)
     d_k = -grad_k
@@ -131,7 +131,7 @@ def conjugate_gradient_method(func, start_point, epsilon=1e-8, max_iter=10000):
 
     return x_k, func(x_k), iter_count
 
-#Гессиан - матрица вторых производных функции в текущей точке, которая показывает кривизну функции
+# Гессиан - матрица вторых производных функции в текущей точке, которая показывает кривизну функции
 def hessian(func, x, epsilon=1e-5):
     n = len(x)
     hess = np.zeros((n, n))
@@ -150,7 +150,7 @@ def hessian(func, x, epsilon=1e-5):
             hess[i, j] = (func(x_ij1) - func(x_ij2) - func(x_ij3) + func(x_ij4)) / (4 * epsilon**2)
     return hess
 
-def newtonian_method(func, start_point, epsilon=1e-8, max_iter=1000, lambda_reg=1e-2):
+def newtonian_method(func, start_point, epsilon=1e-3, max_iter=1000, lambda_reg=1e-2):
     x_k = np.array(start_point, dtype=float)
     iter_count = 0
     
@@ -205,14 +205,20 @@ def update_plot():
         print(f"Ошибка: Неверный ввод для стартовой точки ({e})")
         return
     
+    try:
+        epsilon = float(epsilon_entry.get())
+    except ValueError:
+        print("Ошибка: Неверное значение epsilon")
+        return
+    
     if selected_method == "Метод деформируемого многогранника":
-        min_point, min_value, iterations = nelder_method(func, start_point)
+        min_point, min_value, iterations = nelder_method(func, start_point, epsilon=epsilon)
     elif selected_method == "Градиентный метод":
-        min_point, min_value, iterations = gradient_method(func, start_point)
+        min_point, min_value, iterations = gradient_method(func, start_point, epsilon=epsilon)
     elif selected_method == "Метод сопряженных градиентов":
-        min_point, min_value, iterations = conjugate_gradient_method(func, start_point)
+        min_point, min_value, iterations = conjugate_gradient_method(func, start_point, epsilon=epsilon)
     elif selected_method == "Ньютоновский метод":
-        min_point, min_value, iterations = newtonian_method(func, start_point)
+        min_point, min_value, iterations = newtonian_method(func, start_point, epsilon=epsilon)
     
     min_value_entry.delete(0, tk.END)
     min_value_entry.insert(0, f"{min_value:.8f}")
@@ -276,12 +282,17 @@ method_combo.current(0)
 tk.Label(params_label, text="Стартовая точка x1:").grid(row=2, column=0, sticky="w", pady=5)
 x1_start = tk.Entry(params_label)
 x1_start.grid(row=2, column=1, sticky="ew", pady=5, padx=(5, 0))
-x1_start.insert(0, "0.0")
+x1_start.insert(0, "0")
 
 tk.Label(params_label, text="Стартовая точка x2:").grid(row=3, column=0, sticky="w", pady=5)
 x2_start = tk.Entry(params_label)
 x2_start.grid(row=3, column=1, sticky="ew", pady=5, padx=(5, 0))
-x2_start.insert(0, "0.0")
+x2_start.insert(0, "0")
+
+tk.Label(params_label, text="Точность ε:").grid(row=4, column=0, sticky="w", pady=5)
+epsilon_entry = tk.Entry(params_label)
+epsilon_entry.grid(row=4, column=1, sticky="ew", pady=5, padx=(5, 0))
+epsilon_entry.insert(0, "1e-4")
 
 calculate_btn = tk.Button(left_frame, text="Минимизировать", command=update_plot)
 calculate_btn.pack(fill="x", pady=5)
